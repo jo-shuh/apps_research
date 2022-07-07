@@ -62,7 +62,6 @@ include 'testmail1.php';
         $email->addContent(
             "text/html", "$html"
         );
-        $api_key='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';
         $sendgrid = new \SendGrid($api_key);
         try {
             $sendgrid->send($email);
@@ -82,7 +81,6 @@ include 'testmail1.php';
         $email->addContent(
             "text/html", "$html1"
         );
-        $api_key='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';
         $sendgrid = new \SendGrid($api_key);
         try {
             $sendgrid->send($email);
