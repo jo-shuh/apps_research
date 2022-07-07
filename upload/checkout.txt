@@ -1,0 +1,1113 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:nikeshi2/app_utils/CustomTextStyle.dart';
+import 'package:nikeshi2/models/cart.dart';
+import 'package:nikeshi2/models/orders.dart';
+import 'package:nikeshi2/models/place.dart';
+import 'package:nikeshi2/services/api.dart';
+import 'package:nikeshi2/services/places_Repository.dart';
+import 'package:nikeshi2/services/user-info.dart';
+import 'package:nikeshi2/services/user.dart';
+import 'package:nikeshi2/widgets/cart_component.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+
+class CheckoutPage2 extends StatefulWidget{
+  CheckoutPage2({Key key, this.title}) : super(key: key);
+  final String title;
+
+  @override
+  CheckoutPage2State createState() => CheckoutPage2State();
+
+
+}
+
+class CheckoutPage2State extends State<CheckoutPage2>{
+  GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey();
+  int _payment_value = 1;
+  TextEditingController locationController;
+  TextEditingController nameController;
+  PlacesRepository placesRepository;
+  final GlobalKey<FormState> _regissterFormKey=GlobalKey<FormState>();
+
+  List<Place> listPlace=[];
+  String location='';
+  double longitude = 0.0;
+  double latitude = 0.0;
+  double total_amount=0;
+  bool stk_push_enabled=false;
+  Future<Map<String,dynamic>> selectedLocation;
+  int location_selected=1;
+  int final_amount=0;
+  @override
+  void initState() {
+
+    locationController=new TextEditingController();
+    placesRepository=new PlacesRepository();
+    super.initState();
+  }
+  @override
+  Widget build(BuildContext context) {
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
+    return Scaffold(
+        appBar: AppBar(
+          // Here we take the value from the MyHomePage object that was created by
+          // the App.build method, and use it to set our appbar title.
+
+        ),
+        body:Material(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 15.0, vertical: 3.0),
+                  child: Container(
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height * 1/4,
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20.0),
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                                offset: const Offset(3.0, 3.0),
+                                blurRadius: 5.0,
+                                spreadRadius: 3.0,
+                                color: Colors.black12)
+                          ]),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.only(left: 10.0),
+                                  child: Text(
+                                    "Personal Information",
+                                    style: CustomTextStyle.textFormFieldSemiBold.copyWith(
+                                        fontSize: 14,
+                                        color: Colors.deepPurple,
+                                        fontWeight: FontWeight.w400), //66, 7, 91, 1
+                                  ),
+                                ),
+                                GestureDetector(
+                                  child: Hero(
+                                    tag: 'personalInfoHero',
+                                    child: Icon(
+                                      Icons.edit_outlined,
+                                      color: Colors.deepPurple,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    Navigator.push(context, MaterialPageRoute(builder: (_) {
+                                      return UserInformation();
+                                    }));
+                                  },
+                                )
+                              ],
+                            ),
+                            Provider.of<User>(context).fname.isNotEmpty
+                                ? Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 2.0, horizontal: 10),
+                                  child: Text(
+                                    Provider.of<User>(context).fname +
+                                        ' ' +
+                                        Provider.of<User>(context).lname,
+                                    style: TextStyle(
+                                        fontFamily: 'roboto',
+                                        fontSize: 12,
+                                        color: Colors.black54,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 2.0,
+                                    horizontal: 10.0,
+                                  ),
+                                  child: Text(
+                                    Provider.of<User>(context).email,
+                                    style: TextStyle(
+                                        fontFamily: 'roboto',
+                                        fontSize: 12,
+                                        color: Colors.black54,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 2.0, horizontal: 10.0),
+                                  child: Text(
+                                    'mobile-' + Provider.of<User>(context).phone,
+                                    style: TextStyle(
+                                        fontFamily: 'roboto',
+                                        fontSize: 12,
+                                        color: Colors.black54,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                )
+                              ],
+                            )
+                                : Text('(Tap to enter personal information)'),
+                          ],
+                        ),
+                      )),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 15.0, vertical: 3.0),
+                  child: Container(
+                    //     margin: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20.0),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                              offset: const Offset(3.0, 3.0),
+                              blurRadius: 5.0,
+                              spreadRadius: 3.0,
+                              color: Colors.black12)
+                        ]),
+
+                    child: Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.all(Radius.circular(4)),
+                          border: Border.all(color: Colors.grey.shade200)),
+                      padding: EdgeInsets.only(left: 12, top: 8, right: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          SizedBox(
+                            height: 6,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: <Widget>[
+                              Text(
+                                "Delivery details",
+                                style: CustomTextStyle.textFormFieldSemiBold.copyWith(
+                                    fontSize: 14,
+                                    color: Colors.deepPurple,
+                                    fontWeight: FontWeight.w400),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.add_location_alt,
+                                  color: Colors.deepPurple,
+                                  size: 20.0,
+                                ),
+                                onPressed: () {
+                                  showPlacesDialog();
+                                },
+                                color: Colors.white,
+                              )
+                            ],
+                          ),
+
+                          Provider.of<User>(context,listen:false).location.isNotEmpty
+                              || Provider.of<Orders>(context,listen: false).service_charge.isNotEmpty ?
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              createAddressText(
+                                  'Delivery Address: ' + Provider.of<Orders>(context,listen: false).customer_address, 16),
+                              createAddressText("Delivery Fee: Ksh" + Provider.of<Orders>(context,listen: false).service_charge,6),
+                              createAddressText("Contact info :" + Provider.of<User>(context,listen: false).phone,6),
+                            ],) : Text('(Tap to key in shipping/delivery information)'),
+                          SizedBox(
+                            height: 6,
+                          ),
+                          /*RichText(
+                text: TextSpan(children: [
+                  TextSpan(
+                      text: "Mobile : ",
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'roboto',
+                      )),
+                  TextSpan(
+                      text: "0714556212",
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'roboto',
+                      )),
+                ]),
+              ),*/
+                          SizedBox(
+                            height: 16,
+                          ),
+                          Container(
+                            color: Colors.grey.shade300,
+                            height: 1,
+                            width: double.infinity,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Checkout information',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                fontFamily: 'Open Sans',
+                                color:Colors.deepPurple),
+                          ),
+                          Text(
+                            '' + Provider.of<Cart>(context).total_amount.toString(),
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                fontFamily: 'Open Sans',
+                                color:Colors.deepPurple),
+                          ),
+                          Divider(),
+                          Container(
+                            width: MediaQuery.of(context).size.width*3/5,
+                            height: MediaQuery.of(context).size.height * 1/4,
+                            child:    Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(4))),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.all(Radius.circular(4)),
+                                    border: Border.all(color: Colors.grey.shade200)),
+                                padding: EdgeInsets.only(left: 12, top: 8, right: 12, bottom: 8),
+                                child: ListView.builder(
+                                  itemBuilder: (context, position) {
+                                    return checkoutListItem();
+                                  },
+                                  itemCount: 1,
+                                  shrinkWrap: true,
+                                  primary: false,
+                                  scrollDirection: Axis.vertical,
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+
+                    ],
+                  ),
+                )
+
+
+              ],
+
+            ),
+          )   )
+      /* SingleChildScrollView(
+
+
+
+            ],
+
+          );
+            }
+*//*
+
+*//*
+        )
+
+      ),*/
+////
+//
+//This trailing comma makes auto-formatting nicer for build methods.
+
+    );
+  }
+  checkoutListItem() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 15.0, vertical: 5.0),
+      child: Container(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height * 2/5,
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.0),
+            boxShadow: [
+              BoxShadow(
+                  offset: const Offset(3.0, 3.0),
+                  blurRadius: 5.0,
+                  spreadRadius: 3.0,
+                  color: Colors.black12)
+            ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 30.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Billing details',
+                    style: CustomTextStyle.textFormFieldSemiBold.copyWith(
+                        fontSize: 14,
+                        color: Color.fromRGBO(214, 24, 195, 1),
+                        fontWeight: FontWeight.w400),
+                  ),
+                  Divider(
+                    color: Colors.black12,
+                  )
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
+              child: Column(
+                children: [
+                  DropdownButtonHideUnderline(
+                      child: DropdownButton(
+                        value: _payment_value,
+                        iconEnabledColor: Color.fromRGBO(0, 0, 0, 1),
+                        items: [
+                          DropdownMenuItem(
+                            child: Text(
+                              'Select Mode Of Payment',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black54),
+                            ),
+                            value: 1,
+                          ),
+                          DropdownMenuItem(
+                            child: Text(
+                              "LIPA NA MPESA(STK Push)",
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.green),
+                            ),
+                            value: 2,
+                          ),
+                          DropdownMenuItem(
+                            child: Text(
+                              "LIPA NA MPESA(C2B)",
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.green),
+                            ),
+                            value: 3,
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _payment_value = value;
+                          });
+                        },
+                      ))
+                ],
+              ),
+            ),
+            _payment_value != 1
+                ? Container(
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.height * 2/5,
+                child: _payment_value == 3
+                    ? Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                          vertical: 10.0, horizontal: 20.0),
+                      child: Column(
+                        children: [
+                          TextField(
+                            style: TextStyle(fontSize: 14.0),
+                            autofocus: false,
+/*
+                            controller: mpesaController,
+*/
+                            decoration: InputDecoration(
+                              hintText: 'Enter Mpesa phone number',
+                              contentPadding:
+                              const EdgeInsets.symmetric(
+                                  vertical: 10.0,
+                                  horizontal: 10.0),
+                              filled: true,
+                              fillColor:
+                              Color.fromRGBO(220, 153, 89, 0.1),
+                              focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: Color.fromRGBO(
+                                          214, 24, 195, 1)),
+                                  borderRadius:
+                                  BorderRadius.circular(20.0)),
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none,
+                                  borderRadius:
+                                  BorderRadius.circular(20.0)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                          vertical: 10.0, horizontal: 20.0),
+                      child: Column(
+                        children: [
+                          TextField(
+                            style: TextStyle(fontSize: 14.0),
+                            autofocus: false,
+                            decoration: InputDecoration(
+                              hintText: 'Enter Amount due in Ksh',
+                              contentPadding:
+                              const EdgeInsets.symmetric(
+                                  vertical: 10.0,
+                                  horizontal: 10.0),
+                              filled: true,
+                              fillColor:
+                              Color.fromRGBO(220, 153, 89, 0.1),
+                              focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color:Colors.deepPurple),
+                                  borderRadius:
+                                  BorderRadius.circular(20.0)),
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none,
+                                  borderRadius:
+                                  BorderRadius.circular(20.0)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                        padding: EdgeInsets.symmetric(
+                            vertical: 10.0, horizontal: 0.0),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width *
+                              8 /
+                              10,
+                          height: 50,
+                          child: RaisedButton(
+                            child: Text(
+                              "Confirm Payment",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  color: Colors.white),
+                            ),
+                            color: Colors.green,
+                            shape: RoundedRectangleBorder(
+                                borderRadius:
+                                BorderRadius.circular(20)),
+                            onPressed: () {},
+                          ),
+                        ))
+                  ],
+                )
+                    : receiptBreakdownStk())
+                : Container()
+          ],
+        ),
+      ),
+    );
+  }
+  Widget receiptBreakdownStk(){
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Padding(
+            padding: EdgeInsets.symmetric(
+                vertical: 10.0, horizontal: 10.0),
+            child: Text(
+              'Receipt breakdown:',
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color:Colors.deepPurple),
+            )),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 0.0,vertical: 0.0),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 3/4,
+            child:  Divider(),
+          ),
+        ),
+
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+                padding: EdgeInsets.symmetric(
+                    vertical: 3.0, horizontal: 10.0),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 3/4,
+                  height: 20,
+                  padding: EdgeInsets.symmetric(horizontal: 20.0,vertical: 2.0),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    color:Colors.deepPurple,
+
+                  ),
+                  child:  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      createAddressText('Total',6),
+                      createAddressText(Provider.of<Cart>(context,listen: false).total_amount.toDouble().toString(),6),
+                    ],
+                  ),
+                )),
+            Padding(
+                padding: EdgeInsets.symmetric(
+                    vertical: 3.0, horizontal: 10.0),
+                child: Container(
+                    width: MediaQuery.of(context).size.width * 3/4,
+                    height: 45,
+                    padding: EdgeInsets.symmetric(horizontal: 20.0,vertical: 2.0),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.orange.shade50
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        createAddressText('Delivery Fee',6),
+                        Provider.of<Orders>(context,listen: false).service_charge.isNotEmpty ?
+                        Padding(
+                          padding: EdgeInsets.only(top: 6.0),
+                          child: Text(int.parse(Provider.of<Orders>(context,listen:false).service_charge.toString()).toDouble().toString(),
+                            style: TextStyle(
+                                fontFamily: 'Open Sans',
+                                fontSize: 12,
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w600),),
+                        ) :
+                        Padding(
+                            padding: EdgeInsets.only(top: 0.0),
+                            child: Container(
+                              width: 130,
+                              height: 40,
+                              child: OutlineButton.icon(
+                                onPressed: () {
+                                  showPlacesDialog();
+                                },
+                                // color: Color.fromRGBO(214, 24, 195, 1),
+                                icon: Icon(
+                                  Icons.add_location_alt,
+                                  color:Colors.deepPurple,
+                                  size: 10.0,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.all(
+                                        Radius.circular(10))),
+                                borderSide: BorderSide( color:Colors.deepPurple),
+                                label: Text('Click to add \n delivery location',
+                                  style: TextStyle(fontWeight: FontWeight.w500,
+                                      color:Colors.deepPurple,
+                                      fontFamily: 'roboto',fontSize: 10),),
+                              ),
+                            )
+                        )
+                        ,
+                      ],
+                    )
+                )),
+          ],
+        ),
+        Padding(
+            padding: EdgeInsets.symmetric(
+                vertical: 3.0, horizontal: 10.0),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 3/4,
+              height: MediaQuery.of(context).size.height * 1/9,
+              padding: EdgeInsets.symmetric(horizontal: 20.0,vertical: 5.0),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.white,
+                  border: Border.all(
+                      color: Color.fromRGBO(214,24,195,0.1)
+                  )
+
+              ),
+              child:  Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Gross Total',style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontSize: 12,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w600),),
+                      Text( Provider.of<Orders>(context,listen:false).service_charge.isNotEmpty ? int.parse(Provider.of<Cart>(context,listen: false).calculate_gross_total(
+                          Provider.of<Orders>(context,listen: false).service_charge.toString()).toString()).toDouble().toString() :
+                      int.parse(Provider.of<Cart>(context,listen: false).total_amount.toString()).toDouble().toString(),
+                        style: TextStyle(
+                            fontFamily: 'Open Sans',
+                            fontSize: 12,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w600),),
+                    ],
+                  ),
+                  Divider(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('discount',style: TextStyle(
+                              fontFamily: 'Open Sans',
+                              fontSize: 12,
+                              color: Colors.black54,
+                              fontWeight: FontWeight.w600),),
+
+                        ],
+                      ),
+                      Text(Provider.of<Orders>(context,listen: false).discount,
+                        style: TextStyle(
+                            fontFamily: 'Open Sans',
+                            fontSize: 12,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w600),),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('VAT',style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontSize: 12,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w600),),
+                      Text(Provider.of<Orders>(context).vat_charge_rate,
+                        style: TextStyle(
+                            fontFamily: 'Open Sans',
+                            fontSize: 12,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w600),),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Net Total',style: TextStyle(
+                          fontFamily: 'Open Sans',
+                          fontSize: 12,
+                          color:Colors.deepPurple,
+                          fontWeight: FontWeight.w600),),
+                      Text(
+                        int.parse(Provider.of<Cart>(context,listen: false).total_amount.toString()).toDouble().toString(),
+                        style: TextStyle(
+                            fontFamily: 'Open Sans',
+                            fontSize: 12,
+                            color:Colors.deepPurple,
+                            fontWeight: FontWeight.w600),),
+                    ],
+                  ),
+                ],
+              ),
+            )),
+        Padding(
+            padding: EdgeInsets.symmetric(
+                vertical: 10.0, horizontal: 10.0),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 3/4,
+              height: 50,
+              child: RaisedButton(
+                child: Text(
+                  "Confirm Payment",
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: Colors.white),
+                ),
+                color: confirmUserInfo()
+                    ? Colors.lightGreen
+                    : Colors.greenAccent.shade100,
+                elevation: confirmUserInfo() ? 1 : 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius:
+                    BorderRadius.circular(20)),
+                onPressed: () {
+                  // createOrder();
+
+                  confirmUserInfo()
+;
+                  //   createOrder()
+                  //setPaymentCompleted(context)
+
+                  /*startCheckout(
+                      userPhone:
+                      Provider.of<User>(context,listen: false)
+                          .phone
+                          .replaceFirst(
+                          '0', '254'),
+                      amount: convertTotalAmount(
+                          Provider.of<Cart>(context,listen: false)
+                              .total_amount
+                              .toString())).then((value){
+                                if(transaction_status=='done'){
+                                  setPaymentCompleted(context);
+                                  print('Transaction status done');
+                                }
+                                else{
+                                  error_message='transaction status not done';
+                                  print('Transaction status not done');
+                                }
+                  })*/
+
+                },
+              ),
+            ))
+      ],
+    );
+  }
+  createAddressText(String strAddress, double topMargin) {
+    return Container(
+      margin: EdgeInsets.only(top: topMargin),
+      child: Text(strAddress,
+          style: TextStyle(
+              fontFamily: 'Open Sans',
+              fontSize: 12,
+              color: Colors.black54,
+              fontWeight: FontWeight.w600)),
+    );
+  }
+  showPlacesDialog(){
+    showDialog(
+        context: context,
+        builder:(BuildContext context){
+          return StatefulBuilder(
+            builder: (context,updateState){
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 0,
+                backgroundColor: Colors.transparent,
+                child: Stack(
+                  children: [
+                    Container(
+                        padding: EdgeInsets.only(left: 20,top:20,right: 20,bottom: 45),
+                        margin: EdgeInsets.only(top: 45),
+                        height: MediaQuery.of(context).size.height *2/5,
+                        decoration: BoxDecoration(
+                            shape: BoxShape.rectangle,
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.black12,offset: Offset(3.0,3.0),
+                                  blurRadius: 5,
+                                  spreadRadius: 5
+                              )
+                            ]
+                        ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.symmetric(vertical: 10.0,horizontal: 20.0),
+                                child: Text(
+                                  " Delivery location details",
+                                  style: CustomTextStyle.textFormFieldSemiBold.copyWith(
+                                      fontSize: 14,
+                                      color: Colors.deepPurple,
+                                      fontWeight: FontWeight.w400),
+                                ),
+                              ),
+
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 20,vertical: 10),
+                                child: TextField(
+                                  style: TextStyle(fontSize: 14.0),
+                                  keyboardType: TextInputType.text,
+                                  autofocus: false,
+                                  controller: locationController,
+                                  onChanged: (text){
+                                    if (text.length > 0) {
+                                      //listPlace=getPlaces(text);
+                                      updateState((){
+                                        getPlaces(text);
+
+                                        print('The size of list place is '+ listPlace.length.toString());
+                                      });
+                                    }
+
+                                    else if(text.length==0 || location.length==0){
+                                      updateState((){
+                                        listPlace=[];
+                                      });
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: 'Enter drop of location',
+                                    contentPadding:
+                                    const EdgeInsets.symmetric(
+                                        vertical: 10.0,
+                                        horizontal: 10.0),
+                                    filled: true,
+                                    fillColor:
+                                    Color.fromRGBO(220, 153, 89, 0.1),
+                                    focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                          color: Colors.deepPurple,),
+                                        borderRadius:
+                                        BorderRadius.circular(20.0)),
+                                    border: OutlineInputBorder(
+                                        borderSide: BorderSide.none,
+                                        borderRadius:
+                                        BorderRadius.circular(20.0)),
+                                    suffixIcon: Padding(
+                                      padding: EdgeInsetsDirectional.only(start: 0.0),
+                                      child: Icon(Icons.add_location_alt,color: Colors.deepPurple,
+                                        // color:last_name_enabled ? Color.fromRGBO(214,24,195,1):Colors.black54,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              listPlace.length > 0
+                                  ? Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Container(
+                                  height: MediaQuery.of(context).size.height *
+                                      .20,
+                                  decoration: BoxDecoration(
+                                      color: Color.fromRGBO(220, 153, 89, 0.1),
+                                      borderRadius:
+                                      BorderRadius.circular(25)),
+                                  child: ListView.separated(
+                                      shrinkWrap: true,
+                                      itemBuilder: (context, index) {
+                                        return ListTile(
+                                          title: Row(
+                                            children: [
+                                              Icon(Icons.location_on,
+                                                color: Colors.deepPurple,),
+                                              Padding(
+                                                padding:
+                                                const EdgeInsets.only(
+                                                    left: 5),
+                                                child: Text(
+                                                  listPlace[index].name !=
+                                                      null
+                                                      ? listPlace[index].name
+                                                      : '',
+                                                  overflow: TextOverflow.fade,
+                                                  softWrap: true,
+                                                  maxLines: 1,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          subtitle: Container(
+                                            width: MediaQuery.of(context)
+                                                .size
+                                                .width *
+                                                .90,
+                                            child: Text(
+                                              listPlace[index]
+                                                  .formattedAddress !=
+                                                  null
+                                                  ? listPlace[index]
+                                                  .formattedAddress
+                                                  : ' ',
+                                              overflow: TextOverflow.fade,
+                                              softWrap: true,
+                                              maxLines: 1,
+                                            ),
+                                          ),
+                                          onTap: () {
+                                            decodeLocation(
+                                                listPlace[index].locationId).then((value) async=> calculateDistance());
+
+                                            updateState(() {
+                                              locationController.text =
+                                                  listPlace[index].name;
+                                              location =
+                                                  locationController.text;
+                                              listPlace.clear();
+                                              listPlace = [];
+                                              print('The location is '+ location);
+                                            });
+
+                                          },
+                                        );
+                                      },
+                                      separatorBuilder: (context, index) =>
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                left: 10, right: 10),
+                                            child: Divider(
+                                              height: 1,
+                                              color: Colors.deepPurple,
+                                            ),
+                                          ),
+                                      itemCount: listPlace.length),
+                                ),
+                              )
+                                  : Container(),
+
+                              SizedBox(height: 15,),
+                              Text('your Dropoff Address',style: TextStyle(fontSize: 14),textAlign: TextAlign.center,),
+                              SizedBox(height: 22,),
+                              Align(
+                                alignment: Alignment.bottomCenter,
+                                child:  RaisedButton(
+                                  onPressed: () {
+                                    saveDeliveryDetails();
+                                    updateState((){
+                                      flushUIdetails();
+                                    });
+                                    Navigator.of(context).pop();
+                                  },
+                                  color: Colors.deepPurple,
+                                  padding: EdgeInsets.only(top: 12, left: 60, right: 60, bottom: 12),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.all(Radius.circular(24))),
+                                  child: Text(
+                                    "Save",
+                                    style: CustomTextStyle.textFormFieldSemiBold
+                                        .copyWith(color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                    ),
+
+                  ],
+                ),
+              );
+            },
+          );
+
+        }
+    );
+  }
+  getPlaces(String query) async {
+    String url2 =
+        "https://maps.googleapis.com/maps/api/place/autocomplete/json?key=${Config.apiKey}&input=${Uri.encodeQueryComponent(query)}";
+    Response response = await Dio().get(url2);
+    listPlace = Place.parseLocationList(response.data);
+    return listPlace;
+  }
+  saveDeliveryDetails(){
+    if(locationController.text.isNotEmpty && final_amount > 0 && location_selected==0){
+      setState(() {
+        Provider.of<Orders>(context,listen: false).customer_address=locationController.text;
+        Provider.of<Orders>(context,listen: false).service_charge=final_amount.toString();
+        print('The location is ' + Provider.of<Orders>(context,listen: false).customer_address +
+            'The amount is ' + Provider.of<Orders>(context,listen: false).service_charge + 'the error code is ' +
+            location_selected.toString());
+        locationController.text='';
+        final_amount=0;
+        location_selected=1;
+
+      });
+
+    }
+
+    else{
+      setState(() {
+        print('The location is ' + Provider.of<Orders>(context,listen: false).customer_address +
+            'The amount is ' + Provider.of<Orders>(context,listen: false).service_charge + 'the error code is ' +
+            location_selected.toString());
+        //  location_selected=2;
+
+      });
+    }
+  }
+
+  flushUIdetails(){
+    setState((){
+      selectedLocation=null;
+      listPlace.clear();
+      listPlace = [];
+      locationController.text='';
+      location='';
+      final_amount=0;
+    });
+  }
+  Future<void> decodeLocation(String id) async {
+    String url =
+        "https://maps.googleapis.com/maps/api/place/details/json?key=${Config.apiKey}&placeid=" +
+            Uri.encodeQueryComponent(id);
+    //Uri.encodeQueryComponent(query)
+    Response response = await Dio().get(url)
+    // ignore: missing_return
+        .then((Response results) async {
+      Map<String, dynamic> placeLatLng =
+      results.data['result']['geometry']['location'];
+      setState(() {
+        latitude = double.parse(placeLatLng['lat'].toString());
+        longitude = double.parse(placeLatLng['lng'].toString());
+        print('The latitude is ' + latitude.toString());
+        print('The longitude is ' + longitude.toString());
+      });
+    });
+  }
+  calculateDistance() async{
+    double thika_latitude=-1.0387569;
+    double thika_longitude=37.0833753;
+    Dio dio = new Dio();
+    // Response response=await dio.get("https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=40.6655101,-73.89188969999998&destinations=40.6905615%2C,-73.9976592&key=${Config.apiKey}");
+    Response response=await dio.get("https://maps.googleapis.com/maps/api/distancematrix/json?units=imperial&origins=${thika_latitude},${thika_longitude}&destinations=${latitude},${longitude}&key=${Config.apiKey}");
+    print(response.data);
+  }
+  double convertTotalAmount(String amount){
+    double final_Amount=double.parse(amount);
+    return final_Amount;
+  }
+  bool confirmUserInfo() {
+    if (Provider.of<User>(context,listen: false).fname.length > 0 &&
+        Provider.of<User>(context,listen: false).lname.length > 0 &&
+        Provider.of<User>(context,listen: false).phone.length > 0 &&
+        Provider.of<User>(context,listen: false).email.length > 0) {
+      setState(() {
+        stk_push_enabled = true;
+      });
+      return stk_push_enabled;
+    } else {
+      setState(() {
+        stk_push_enabled = false;
+      });
+      return stk_push_enabled;
+    }
+  }
+}
